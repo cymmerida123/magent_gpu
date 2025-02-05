@@ -116,7 +116,7 @@ def _get_network_config(parser: argparse.ArgumentParser):
                        help="Dimension of hidden layers for actlayer (default '128 128')")
     group.add_argument("--activation-id", type=int, default=1,
                        help="Choose 0 to use Tanh, 1 to use ReLU, 2 to use LeakyReLU, 3 to use ELU (default 1)")
-    group.add_argument("--use-feature-normalization", action='store_true', default=True,
+    group.add_argument("--use-feature-normalization", action='store_true', default=False,
                        help="Whether to apply LayerNorm to the feature extraction inputs")
     group.add_argument("--gain", type=float, default=0.01,
                        help="The gain # of last action layer")

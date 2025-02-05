@@ -40,7 +40,7 @@ class PlanningEnv(BaseEnv):
         args = Args()
         self.controller = PPOActor(args, self.observation_space, self.low_level_action_space, device=self.device)
         self.controller.eval()
-        self.controller.load_state_dict(torch.load(ego_run_dir + f"/actor_latest.pt"))
+        self.controller.load_state_dict(torch.load(ego_run_dir + f"/actor_latest.pt", weights_only=True))
         self.ego_rnn_states = torch.zeros((self.n, 1, 128), device=torch.device(device))
 
     def load(self, random_seed, config, model):

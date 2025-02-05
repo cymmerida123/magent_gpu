@@ -39,7 +39,7 @@ args = Args()
 
 ego_policy = PPOActor(args, env.observation_space, env.action_space, device=torch.device(device))
 ego_policy.eval()
-ego_policy.load_state_dict(torch.load(ego_run_dir + f"/actor_latest.pt"))
+ego_policy.load_state_dict(torch.load(ego_run_dir + f"/actor_latest.pt", weights_only=True))
 
 print("Start render")
 ego_obs = env.reset()

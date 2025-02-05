@@ -89,8 +89,8 @@ def main(args):
         # torch.set_num_threads(all_args.n_training_threads)
 
     # run dir
-    run_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/runs/{}_{}_{}_{}_{}_{}'.
-                   format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), all_args.env_name, all_args.scenario_name, all_args.model_name, all_args.algorithm_name, all_args.experiment_name))
+    run_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/runs/{}_{}_{}_{}_{}'.
+                   format(all_args.env_name, all_args.scenario_name, all_args.model_name, all_args.algorithm_name, all_args.experiment_name) + '/{}'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")))
     if not run_dir.exists():
         os.makedirs(str(run_dir))
 
