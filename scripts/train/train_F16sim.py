@@ -41,9 +41,9 @@ def make_eval_env(all_args):
     def get_env_fn():
         def init_env():
             if all_args.env_name == "Control":
-                env = ControlEnv(num_envs=all_args.n_rollout_threads, config=all_args.scenario_name, model= all_args.model_name, random_seed=all_args.seed, device=all_args.device)
+                env = ControlEnv(num_envs=all_args.n_eval_rollout_threads, config=all_args.scenario_name, model= all_args.model_name, random_seed=all_args.seed, device=all_args.device)
             elif all_args.env_name == "Planning":
-                env = PlanningEnv(num_envs=all_args.n_rollout_threads, config=all_args.scenario_name, model= all_args.model_name, random_seed=all_args.seed, device=all_args.device)
+                env = PlanningEnv(num_envs=all_args.n_eval_rollout_threads, config=all_args.scenario_name, model= all_args.model_name, random_seed=all_args.seed, device=all_args.device)
             elif all_args.env_name == "SingleCombat":
                 env = SingleCombatEnv(num_envs=all_args.n_eval_rollout_threads, config=all_args.scenario_name, random_seed=all_args.seed * 50000, device=all_args.device)
             else:

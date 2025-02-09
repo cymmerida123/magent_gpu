@@ -57,12 +57,12 @@ class HeadingTask(BaseTask):
         roll, pitch, heading = env.model.get_posture()
         vt = env.model.get_vt()
 
-        # delta_heading = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_heading_increment
-        # delta_altitude = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_altitude_increment
-        # delta_vt = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_velocities_u_increment
-        delta_heading = 2 * torch.pi / 3
-        delta_altitude = 1000
-        delta_vt = 0
+        delta_heading = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_heading_increment
+        delta_altitude = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_altitude_increment
+        delta_vt = 2 * (torch.rand(size, device=self.device) - 0.5) * self.max_velocities_u_increment
+        # delta_heading = 2 * torch.pi / 3
+        # delta_altitude = 1000
+        # delta_vt = 0
 
         self.target_altitude[reset] = altitude[reset] + delta_altitude
         self.target_heading[reset] = wrap_PI(heading[reset] + delta_heading)

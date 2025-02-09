@@ -187,8 +187,8 @@ class F16SimRunner(Runner):
             eval_rnn_states[eval_reset_env == True] = np.zeros(((eval_reset_env == True).sum(), *eval_rnn_states.shape[1:]), dtype=np.float32)
 
         eval_infos = {}
-        eval_infos['eval_average_episode_rewards'] = np.concatenate(eval_episode_rewards).mean(axis=1)  # shape: [num_agents, 1]
-        logging.info(" eval average episode rewards: " + str(np.mean(eval_infos['eval_average_episode_rewards'])))
+        eval_infos['eval_average_episode_rewards'] = np.mean(np.concatenate(eval_episode_rewards).mean(axis=1))  # shape: [num_agents, 1] -> [1]
+        logging.info(" eval average episode rewards: " + str(eval_infos['eval_average_episode_rewards']))
         self.log_info(eval_infos, total_num_steps)
         logging.info("...End evaluation")
 
