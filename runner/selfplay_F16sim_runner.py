@@ -218,7 +218,7 @@ class SelfplayJSBSimRunner(F16SimRunner):
         # Update elo
         ego_elo = np.array([self.latest_elo for _ in range(self.n_eval_rollout_threads)])
         opponent_elo = np.array([self.policy_pool[key] for key in eval_choose_opponents])
-        expected_score = 1 / (1 + 10**((opponent_elo-ego_elo)/400))
+        expected_score = 1 / (1 + 10**((ego_elo-opponent_elo)/400))
 
         actual_score = np.zeros_like(expected_score)
         diff = opponent_average_episode_rewards - eval_average_episode_rewards

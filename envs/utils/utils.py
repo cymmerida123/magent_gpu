@@ -176,7 +176,7 @@ def get_AO_TA_R(ego_pos, enm_pos, ego_vel, enm_vel, return_side=False):
     else:
         temp_ego_vel = torch.hstack((ego_vel[:, :-1], torch.zeros_like(ego_vel[:, -1].reshape(-1, 1))))
         temp_delta_pos = torch.hstack((delta_pos[:, :-1], torch.zeros_like(delta_pos[:, -1].reshape(-1, 1))))
-        cross = torch.cross(temp_ego_vel, temp_delta_pos)
+        cross = torch.linalg.cross(temp_ego_vel, temp_delta_pos)
         side_flag = torch.sign(cross[:, -1])
         return ego_AO, ego_TA, distance, side_flag
 
@@ -201,7 +201,7 @@ def get2d_AO_TA_R(ego_pos, enm_pos, ego_vel, enm_vel, return_side=False):
     else:
         temp_ego_vel = torch.hstack((ego_vel, torch.zeros_like(ego_vel[:, -1].reshape(-1, 1))))
         temp_delta_pos = torch.hstack((delta_pos, torch.zeros_like(delta_pos[:, -1].reshape(-1, 1))))
-        cross = torch.cross(temp_ego_vel, temp_delta_pos)
+        cross = torch.linalg.cross(temp_ego_vel, temp_delta_pos)
         side_flag = torch.sign(cross[:, -1])
         return ego_AO, ego_TA, distance, side_flag
 

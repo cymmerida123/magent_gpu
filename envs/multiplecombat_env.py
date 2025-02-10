@@ -25,8 +25,8 @@ class MultipleCombatEnv(BaseEnv):
     """
     MultipleCombatEnv is a fly-combat env for multiple agents to do combating task.
     """
-    def __init__(self, num_envs=1, config='selfplay', random_seed=None, device=device):
-        super().__init__(num_envs, config, random_seed, device)
+    def __init__(self, num_envs=1, config='selfplay', model='F16', random_seed=None, device=device):
+        super().__init__(num_envs, config, model, random_seed, device)
         self.ego_agents = getattr(self.config, 'ego_agents', 2)
         self.enm_agents = getattr(self.config, 'enm_agents', 2)
         if self.num_agents != self.ego_agents + self.enm_agents:

@@ -35,9 +35,9 @@ class Shutdown(BaseTerminationCondition):
         mask1 = env.blood[ego_agents] <= 0
         mask2 = env.blood[enm_agents] <= 0
         done[ego_agents] = mask2 & (~mask1)
-        done[enm_agents] = mask2 & (~mask1)
+        done[enm_agents] = mask1 & (~mask2)
         bad_done[ego_agents] = mask1
-        bad_done[enm_agents] = mask1
+        bad_done[enm_agents] = mask2
         if torch.any(bad_done):
             self.log(f'aircraft is shutdown!')
             print(torch.sum(bad_done), 'aircraft is shutdown!')

@@ -28,6 +28,12 @@ init_T: 2000
 target_dist: 3
 
 # init config
+init_state: {
+  init_altitude_ft: 20000,
+  init_heading: 0,
+  init_vt_ft: 1100,
+  init_T: 2000
+}
 max_altitude: 20000
 min_altitude: 19000
 max_vt: 1200
