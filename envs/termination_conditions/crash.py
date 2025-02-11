@@ -31,12 +31,12 @@ class Crash(BaseTerminationCondition):
         exceed_time_limit = torch.zeros_like(bad_done)
         ego_agents = torch.arange(env.num_envs, device=self.device) * env.num_agents
         enm_agents = ego_agents + 1
-        ego_npos = env.s[ego_agents, 0]
-        ego_epos = env.s[ego_agents, 1]
-        ego_altitude = env.s[ego_agents, 2]
-        enm_npos = env.s[enm_agents, 0]
-        enm_epos = env.s[enm_agents, 1]
-        enm_altitude = env.s[enm_agents, 2]
+        ego_npos = env.model.s[ego_agents, 0]
+        ego_epos = env.model.s[ego_agents, 1]
+        ego_altitude = env.model.s[ego_agents, 2]
+        enm_npos = env.model.s[enm_agents, 0]
+        enm_epos = env.model.s[enm_agents, 1]
+        enm_altitude = env.model.s[enm_agents, 2]
         distance = (ego_npos - enm_npos) ** 2 + (ego_epos - enm_epos) ** 2 + (ego_altitude - enm_altitude) ** 2
         bad_done[ego_agents] = distance <= self.distance_limit ** 2
         bad_done[enm_agents] = distance <= self.distance_limit ** 2

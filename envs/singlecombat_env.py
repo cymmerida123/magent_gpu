@@ -17,10 +17,11 @@ from termination_conditions.timeout import Timeout
 from termination_conditions.shutdown import Shutdown
 from utils.utils import wrap_PI, get2d_AO_TA_R, get_AO_TA_R, orientation_reward, range_reward, orientation_fn, distance_fn, enu_to_geodetic, _t2n
 from algorithms.pid.controller import Controller
-from models.F16_model import F16Model
+from models.F16_pid_model import F16PidModel
 from models.UAV_model import UAVModel
 from reward_functions.event_driven_reward import EventDrivenReward
 from reward_functions.pursue_reward import PursueReward
+import logging
 
 device = "cuda:0"
 
@@ -33,22 +34,9 @@ class SingleCombatEnv(BaseEnv):
         if self.num_agents != 2:
             raise NotImplementedError(f"Singlecombat number of agents must be 2!")
         self.recent_s = [None, None]
-        self.init_T = getattr(self.config, 'init_T', 2000)
-        # self.target_dist = getattr(self.config, 'target_dist', 3)
-        self.max_altitude = getattr(self.config, 'max_altitude', 20000)
-        self.min_altitude = getattr(self.config, 'min_altitude', 19000)
-        self.max_vt = getattr(self.config, 'max_vt', 1200)
-        self.min_vt = getattr(self.config, 'min_vt', 1000)
-        self.max_heading = getattr(self.config, 'max_heading', 0.5)
-        self.min_heading = getattr(self.config, 'min_heading', -0.5)
-        self.max_npos = getattr(self.config, 'max_npos', 5000)
-        self.min_npos = getattr(self.config, 'min_npos', -5000)
-        self.max_epos = getattr(self.config, 'max_epos', 5000)
-        self.min_epos = getattr(self.config, 'min_epos', -5000)
         self.dt = getattr(self.config, 'dt', 0.02)
         # 血量
         self.blood = 100 * torch.ones(self.n, device=self.device)
-        self.controller = Controller(dt=self.dt, n=self.n, device=device)
         self.reward_functions = [
             PursueReward(self.config),
             EventDrivenReward(self.config),
@@ -74,9 +62,10 @@ class SingleCombatEnv(BaseEnv):
         if random_seed is not None:
             self.seed(random_seed)
         if model == 'F16':
-            self.model = F16Model(self.config, self.n, self.device, random_seed)
-        elif model == 'UAV':
-            self.model = UAVModel(self.config, self.n, self.device, random_seed)
+            self.model = F16PidModel(self.config, self.n, self.device, random_seed)
+        else:
+            logging.error("Can not support the " + model + " model.")
+            raise NotImplementedError
 
     @property
     def observation_space(self):
@@ -125,6 +114,9 @@ class SingleCombatEnv(BaseEnv):
             - [14] side_flag             1 or 0 or -1
         """
         # ego_info
+        self.s = self.model.s
+        self.velocity = self.model.get_velocity()
+        self.es = self.model.get_extended_state()
         norm_altitude = self.s[:, 2].reshape(-1, 1) * 0.3048 / 5000
         roll_sin = torch.sin(self.s[:, 3].reshape(-1, 1))
         roll_cos = torch.cos(self.s[:, 3].reshape(-1, 1))
@@ -233,36 +225,10 @@ class SingleCombatEnv(BaseEnv):
             dones = dones + done
             bad_dones = bad_dones + bad_done
             exceed_time_limits = exceed_time_limits + exceed_time_limit
-        self.is_done = self.is_done + done
-        self.bad_done = self.bad_done + bad_done
-        self.exceed_time_limit = self.exceed_time_limit + exceed_time_limit
+        self.is_done = self.is_done + dones
+        self.bad_done = self.bad_done + bad_dones
+        self.exceed_time_limit = self.exceed_time_limit + exceed_time_limits
         return self.is_done, self.bad_done, self.exceed_time_limit, info
-    
-    # def reset(self):
-    #     self.s = torch.zeros((self.n, self.num_states), device=self.device)  # state
-    #     self.u = torch.zeros((self.n, self.num_controls), device=self.device)
-    #     self.s[:, 0] = torch.rand_like(self.s[:, 0]) * (self.max_npos - self.min_npos) + self.min_npos
-    #     self.s[:, 1] = torch.rand_like(self.s[:, 1]) * (self.max_epos - self.min_epos) + self.min_epos
-    #     self.s[:, 2] = torch.rand_like(self.s[:, 2]) * (self.max_altitude - self.min_altitude) + self.min_altitude
-    #     self.s[:, 5] = torch.rand_like(self.s[:, 5]) * (self.max_heading - self.min_heading) + self.min_heading
-    #     self.s[:, 6] = torch.rand_like(self.s[:, 6]) * (self.max_vt - self.min_vt) + self.min_vt
-    #     self.u[:, 0] = self.init_T
-    #     # self.model.update(self.u)
-    #     self.model.s = self.s
-    #     self.model.u = self.u
-    #     self.es = self.model.get_extended_state()
-    #     self.eas2tas = self.model.get_EAS2TAS()
-    #     self.velocity = self.model.get_velocity()
-    #     self.acceleration = self.model.get_acceleration()
-    #     self.blood = 100 * torch.ones(self.n, device=self.device)
-    #     self.step_count = torch.zeros(self.n, dtype=torch.int64, device=self.device)
-    #     self.is_done = torch.zeros(self.n, dtype=torch.bool, device=self.device)
-    #     self.bad_done = torch.zeros(self.n, dtype=torch.bool, device=self.device)
-    #     self.exceed_time_limit = torch.zeros(self.n, dtype=torch.bool, device=self.device)
-    #     obs = self.obs()
-    #     self.recent_s[1] = self.s
-    #     self.recent_s[0] = self.s
-    #     return obs
     
     def reset(self):
         """Only reset envs that are already done."""
@@ -277,21 +243,8 @@ class SingleCombatEnv(BaseEnv):
         agents = agents.reshape(self.num_envs, self.num_agents)
         reset_agents = agents[reset_env, :]
         reset_agents = reset_agents.reshape(-1)
-        self.s[reset_agents, :] = torch.zeros_like(self.s[reset_agents, :])  # state
-        self.u[reset_agents, :] = torch.zeros_like(self.u[reset_agents, :])
-        self.s[reset_agents, 0] = torch.rand_like(self.s[reset_agents, 0]) * (self.max_npos - self.min_npos) + self.min_npos
-        self.s[reset_agents, 1] = torch.rand_like(self.s[reset_agents, 1]) * (self.max_epos - self.min_epos) + self.min_epos
-        self.s[reset_agents, 2] = torch.rand_like(self.s[reset_agents, 2]) * (self.max_altitude - self.min_altitude) + self.min_altitude
-        self.s[reset_agents, 5] = torch.rand_like(self.s[reset_agents, 5]) * (self.max_heading - self.min_heading) + self.min_heading
-        self.s[reset_agents, 6] = torch.rand_like(self.s[reset_agents, 6]) * (self.max_vt - self.min_vt) + self.min_vt
-        self.u[reset_agents, 0] = self.init_T
-        # self.model.update(self.u)
-        self.model.s = self.s
-        self.model.u = self.u
-        self.es = self.model.get_extended_state()
-        self.eas2tas = self.model.get_EAS2TAS()
-        self.velocity = self.model.get_velocity()
-        self.acceleration = self.model.get_acceleration()
+        self.model.reset(self)
+        self.s = self.model.s
         self.blood[reset_agents] = 100
         self.step_count[reset_agents] = 0
         self.is_done[:] = 0
@@ -308,38 +261,21 @@ class SingleCombatEnv(BaseEnv):
         self.reset()
 
         for i in range(5):
-            action = torch.clamp(action, -1, 1)
-            self.controller.roll_dem = 0.9 * self.controller.roll_dem + 0.1 * action[:, 1].reshape(-1, 1) * 4 * torch.pi / 9
-            self.controller.pitch_dem = 0.9 * self.controller.pitch_dem + 0.1 * action[:, 2].reshape(-1, 1) * torch.pi / 12
-            # self.controller.roll_dem = wrap_PI(self.s[:, 3].reshape(-1, 1) + action[:, 1].reshape(-1, 1) * torch.pi / 18)
-            # self.controller.pitch_dem = wrap_PI(self.s[:, 4].reshape(-1, 1) + action[:, 2].reshape(-1, 1) * torch.pi / 18)
-            self.controller.yaw_dem = wrap_PI(self.s[:, 5].reshape(-1, 1) + action[:, 3].reshape(-1, 1) * torch.pi / 60)
-            self.controller.stabilize(self)
-            T = 0.9 * self.u[:, 0].reshape(-1, 1) + 0.1 * action[:, 0].reshape(-1, 1) * 0.225 * 76300 / 0.3048
-            el = -self.controller.el
-            ail = -self.controller.ail
-            rud = -self.controller.rud
-            lef = torch.zeros((self.n, 1), device=self.device)
-            action = torch.hstack((T, el))
-            action = torch.hstack((action, ail))
-            action = torch.hstack((action, rud))
-            action = torch.hstack((action, lef))
             # obs, reward, done, bad_done, exceed_time_limit, info = super().step(action)
-            self.model.update(action)
+            self.model.update(action, self)
             done = self.is_done.bool()
             bad_done = self.bad_done.bool()
             exceed_time_limit = self.exceed_time_limit.bool()
             reset = (done | bad_done) | exceed_time_limit
             self.model.s[reset] = self.model.recent_s[reset]
-            self.s = self.model.s
-            self.u = self.model.u
-            self.es = self.model.get_extended_state()
-            self.eas2tas = self.model.get_EAS2TAS()
-            self.recent_s[0] = self.s
+            # self.model.u[reset] = self.model.recent_u[reset]
             self.step_count += 1
             info = self.info()
             done, bad_done, exceed_time_limit, info = self.done(info)   
 
+        self.s = self.model.s
+        self.recent_s[0] = self.s
+        self.es = self.model.get_extended_state()
         ego_agents = torch.arange(self.num_envs, device=self.device) * self.num_agents
         enm_agents = ego_agents + 1
         ego_pos = self.s[ego_agents, :3]
@@ -352,6 +288,8 @@ class SingleCombatEnv(BaseEnv):
         obs = self.obs()
         info = self.info()
         done, bad_done, exceed_time_limit, info = self.done(info)
+        if torch.any(done | bad_done | exceed_time_limit):
+            print('-----------this round over-------------')
         reward = self.reward()
         self.update_recent_s(self.s)
         return obs, reward, done, bad_done, exceed_time_limit, info
