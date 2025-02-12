@@ -30,12 +30,12 @@ def _t2n(x):
 
 num_agents = 2
 render = True
-ego_policy_index = 199
+ego_policy_index = "latest"
 enm_policy_index = 74
 episode_rewards = 0
-ego_run_dir = CURRENT_WORK_PATH + "/scripts/runs/2024-02-20_19-24-11_SingleCombat_selfplay_ppo_v1"
-enm_run_dir = CURRENT_WORK_PATH + "/scripts/runs/2024-02-20_19-24-11_SingleCombat_selfplay_ppo_v1"
-experiment_name = ego_run_dir.split('/')[-4]
+ego_run_dir = CURRENT_WORK_PATH + "/scripts/runs/SingleCombat_selfplay_F16_ppo_v1/2025-02-11_15-56-45"
+enm_run_dir = CURRENT_WORK_PATH + "/scripts/runs/SingleCombat_selfplay_F16_ppo_v1/2025-02-11_15-56-45"
+experiment_name = ego_run_dir.split('/')[-2] + "_" + ego_run_dir.split('/')[-1]
 device = "cuda:0"
 
 env = SingleCombatEnv(num_envs=1, config="selfplay", random_seed=0, device=device)
@@ -74,7 +74,7 @@ while True:
     print(_t2n(env.step_count[0]), _t2n(rewards))
     print(_t2n(env.step_count[0]), 'ego_blood:', _t2n(env.blood[0]))
     print(_t2n(env.step_count[0]), 'enm_blood:', _t2n(env.blood[1]))
-    env.render(count=counts)
+    env.render(count=counts, filepath=f'{experiment_name}.txt.acmi')
     if counts >= 2000:
         break
     episode_rewards += _t2n(rewards)
